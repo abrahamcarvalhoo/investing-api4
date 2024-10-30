@@ -7,15 +7,15 @@ const fastify = Fastify({ logger: true });
 
 
 await fastify.register(cors, {
-  origin: ['http://localhost', 'https://localhost', 'http://127.0.0.1', 'https://127.0.0.1', 'http://macroeconomic.live', 'https://macroeconomic.live', 'https://macroeconomic.vercel.app', 'https://investing-api.vercel.app', 'https://investing-api-1.vercel.app', 'https://investing-api-2.vercel.app', 'https://investing-api-3.vercel.app', 'https://investing-api-4.vercel.app', 'https://investing-api-5.vercel.app'],
-  methods: ['GET', 'POST'],
+  origin: ["http://localhost", "https://localhost", "http://127.0.0.1", "https://127.0.0.1", "http://macroeconomic.live", "https://macroeconomic.live", "https://macroeconomic.vercel.app", "https://investing-api.vercel.app", "https://investing-api-1.vercel.app", "https://investing-api-2.vercel.app", "https://investing-api-3.vercel.app", "https://investing-api-4.vercel.app", "https://investing-api-5.vercel.app"],
+  methods: ["GET", "POST"],
 });
 
 let browser;
 
 const startBrowser = async () => {
   browser = await puppeteer.launch({
-    args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--hide-scrollbars', '--disable-web-security'],
+    args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--hide-scrollbars", "--disable-web-security"],
     defaultViewport: chromium.defaultViewport,
     executablePath: await chromium.executablePath("https://github.com/Sparticuz/chromium/releases/download/v123.0.1/chromium-v123.0.1-pack.tar"),
     headless: chromium.headless,
@@ -46,6 +46,12 @@ fastify.get("/:pid", async (request, reply) => {
     await page.setUserAgent(userAgent);
     await page.setViewport({ width: 1, height: 1 });
     await page.goto(`https://api.investing.com/api/financialdata/${pidNumber}/historical/chart?period=P1W&interval=P1D&pointscount=60`);
+
+    const bodyClass = await page.evaluate(() => document.querySelector("body").getAttribute("class"));
+
+    if (bodyClass == "no-js") {
+      return reply.status(400).send({ error: "Error", message: "couldn't bypass CloudFlare protection" });
+    }
 
     const response = await page.evaluate(() => document.querySelector("body").textContent);
 
